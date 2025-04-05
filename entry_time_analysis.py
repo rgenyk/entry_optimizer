@@ -70,6 +70,8 @@ if uploaded_file is not None:
         if not recent_df.empty:  
             recent_pivot_table = recent_df.pivot_table(index='Time Opened', columns='Day of Week',   
                                                       values=value_column, aggfunc='mean')  
+            # Replace NaN values with 0
+            recent_pivot_table = recent_pivot_table.fillna(0)
             recent_rounded_pivot_table = recent_pivot_table.round(3)  
             # Filter columns that exist in the recent data  
             recent_existing_days = [day for day in ordered_days if day in recent_rounded_pivot_table.columns]  
@@ -198,7 +200,7 @@ if uploaded_file is not None:
             #print("\
             #DataFrame format:")
             #st.write(times_df.to_string(index=False))
-            st.title("Optimal Entry Times") 
+            st.title("Trending Entry Times") 
             times_df        
         
         else:  
