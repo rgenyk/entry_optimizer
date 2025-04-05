@@ -55,6 +55,9 @@ if uploaded_file is not None:
         # Create the overall pivot table: index = 'Time Opened', columns = day of week (Monday to Friday)  
         pivot_table = df.pivot_table(index='Time Opened', columns='Day of Week',   
                                      values=value_column, aggfunc='mean')  
+        # Replace NaN values with 0
+        pivot_table = pivot_table.fillna(0)
+        
         rounded_pivot_table = pivot_table.round(3)  
         ordered_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']  
         # Filter columns that exist in the data  
