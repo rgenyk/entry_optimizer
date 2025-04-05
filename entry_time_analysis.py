@@ -32,14 +32,16 @@ if uploaded_file is not None:
         selected_strategies = st.multiselect('Select Strategy(s) to include', unique_strategies, default=unique_strategies)  
         # Filter DataFrame based on selected strategies  
         df = df[df['Strategy'].isin(selected_strategies)]  
-      
+        df = df.fillna(0)
+        
         # Convert 'Date Opened' to datetime and create 'Day of Week' column  
         df['Date Opened'] = pd.to_datetime(df['Date Opened'])  
         df['Day of Week'] = df['Date Opened'].dt.day_name()
            
         # Calculate PCR  
         df['PCR'] = (df['P/L'] / df['Premium'])
-          
+        df['PCR'] = df['PCR'].fillna(0) 
+
         # Add a radio button to select between P/L and Normalized P/L  
         metric_option = st.radio(  
             "Select metric to visualize:",  
