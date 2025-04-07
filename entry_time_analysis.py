@@ -6,9 +6,14 @@ import numpy as np
 from datetime import datetime, timedelta  
 import io  
 from matplotlib.colors import ListedColormap  
-  
+
+# Define the function to convert Excel date numbers to datetime  
+def excel_date_to_datetime(excel_date):  
+    return datetime(1899, 12, 30) + timedelta(days=int(excel_date))  
+ 
 st.title("Entry Time Analysis")  
-st.write("Drag and drop your CSV file to visualize performance by day of week and time.")  
+st.write("Drag and drop your CSV file to visualize performance by day of week and time.")
+st.write("FOMC and CPI days are automatically filtered out of the analysis.")  
   
 # File uploader widget for drag and drop  
 uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])  
@@ -18,14 +23,26 @@ if uploaded_file is not None:
         # Read the CSV file into a DataFrame  
         df = pd.read_csv(uploaded_file)  
         st.success("File uploaded successfully!")  
-          
-        # Optionally display the raw data  
-        if st.checkbox("Show raw data"):  
-            st.dataframe(df.head())  
-          
+
         # Only include rows where 'Legs' contains 'STO'
         df = df[df['Legs'].str.contains('STO', na=False)] 
 
+        # Load special days
+        df_special = pd.read_csv('Special days.csv', encoding='UTF-8-SIG')  
+        special_dates = [excel_date_to_datetime(date) for date in df_special['Date']]
+        #df_special  
+       
+        # Convert 'Date Opened' to datetime 
+        df['Date Opened'] = pd.to_datetime(df['Date Opened'])  
+        
+        # Filter out CPI and FOMC days
+        # if st.checkbox("Remove CPI and FOMC Days"):
+        df = df[~df['Date Opened'].isin(special_dates)]
+
+        # Optionally display the raw data  
+        if st.checkbox("Show raw data"):  
+            st.dataframe(df.head())  
+        
         # Add filtering based on 'Strategy' column:  
         # Get the sorted unique strategies for the multiselect widget  
         unique_strategies = sorted(df['Strategy'].unique())  
@@ -34,8 +51,8 @@ if uploaded_file is not None:
         df = df[df['Strategy'].isin(selected_strategies)]  
         df = df.fillna(0)
         
-        # Convert 'Date Opened' to datetime and create 'Day of Week' column  
-        df['Date Opened'] = pd.to_datetime(df['Date Opened'])  
+        # Create 'Day of Week' column  
+        #df['Date Opened'] = pd.to_datetime(df['Date Opened'])  
         df['Day of Week'] = df['Date Opened'].dt.day_name()
            
         # Calculate PCR  
