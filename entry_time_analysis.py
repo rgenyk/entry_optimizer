@@ -68,7 +68,13 @@ if uploaded_file is not None:
           
         # Use the selected metric for analysis  
         value_column = metric_option  
-          
+
+        # Add radio button for mask selection
+        mask_type = st.radio(
+            'Select Mask Type',
+             ['Highlight Above Average (highlights all above average values in light green)', 'Highlight Positive Values (highlights all positive values in light green)'])
+
+        st.write("Dark green highlights times when both the 365 and 90 day are above average.")
         # Create the overall pivot table: index = 'Time Opened', columns = day of week (Monday to Friday)  
         pivot_table = df.pivot_table(index='Time Opened', columns='Day of Week',   
                                      values=value_column, aggfunc='mean')  
@@ -120,23 +126,54 @@ if uploaded_file is not None:
             # Create a mask starting with 0 (default)  
             mask = np.zeros(combined_table.shape, dtype=int)         
             
-            # Mark cells as 1 if they're above the overall average  
-            mask = np.where(combined_table.values > overall_avg, 1, mask)  
-            
-            # Mark cells as 2 if both the overall and recent values exceed their averages
-            # Process column pairs (1&2, 3&4, 5&6, etc.)  
-            
-            # Note: Python uses 0-based indexing, so columns 1&2 are at indices 0&1  
-            for i in range(0, combined_table.shape[1], 2):  
-                # Check if we have a complete pair (to handle odd number of columns)  
-                if i + 1 < combined_table.shape[1]:  
-                # For each row, check if both columns in the pair are above average  
-                    for row in range(combined_table.shape[0]):  
-                        if (combined_table.iloc[row, i] > overall_avg and   
-                            combined_table.iloc[row, i+1] > overall_avg):  
-                            # Set both columns in this row to 2  
-                            mask[row, i] = 2  
-                            mask[row, i+1] = 2  
+            ## Create a mask for the heatmap based on selection
+            #if mask_type == 'Highlight Above Average':
+                # Original mask: highlight cells above column average
+            #    mask = pivot_365d.gt(pivot_365d.mean())
+                # Create a custom colormap (white for below average, green for above average)  
+            #    colors = ['white', '#24EB84']  
+            #else:  # 'Highlight Positive Values'
+                # New mask: highlight positive values
+            #    mask = pivot_365d > 0
+                # Create a custom colormap (white for negative/zero, red for positive)  
+            #    colors = ['white', '#EB3424']  
+
+            if mask_type == 'Highlight Above Average':
+                # Mark cells as 1 if they're above the overall average  
+                mask = np.where(combined_table.values > overall_avg, 1, mask)  
+                
+                # Mark cells as 2 if both the overall and recent values exceed their averages
+                # Process column pairs (1&2, 3&4, 5&6, etc.)  
+                
+                # Note: Python uses 0-based indexing, so columns 1&2 are at indices 0&1  
+                for i in range(0, combined_table.shape[1], 2):  
+                    # Check if we have a complete pair (to handle odd number of columns)  
+                    if i + 1 < combined_table.shape[1]:  
+                    # For each row, check if both columns in the pair are above average  
+                        for row in range(combined_table.shape[0]):  
+                            if (combined_table.iloc[row, i] > overall_avg and   
+                                combined_table.iloc[row, i+1] > overall_avg):  
+                                # Set both columns in this row to 2  
+                                mask[row, i] = 2  
+                                mask[row, i+1] = 2  
+            else:  # 'Highlight All Positive Values'
+               # Mark cells as 1 if they're above the overall average  
+                mask = np.where(combined_table.values > 0, 1, mask)  
+                
+                # Mark cells as 2 if both the overall and recent values exceed their averages
+                # Process column pairs (1&2, 3&4, 5&6, etc.)  
+                
+                # Note: Python uses 0-based indexing, so columns 1&2 are at indices 0&1  
+                for i in range(0, combined_table.shape[1], 2):  
+                    # Check if we have a complete pair (to handle odd number of columns)  
+                    if i + 1 < combined_table.shape[1]:  
+                    # For each row, check if both columns in the pair are above average  
+                        for row in range(combined_table.shape[0]):  
+                            if (combined_table.iloc[row, i] > 0 and   
+                                combined_table.iloc[row, i+1] > 0):  
+                                # Set both columns in this row to 2  
+                                mask[row, i] = 2  
+                                mask[row, i+1] = 2  
 
             # Convert the numpy array back to a DataFrame with the same index and columns as combined_table  
             mask = pd.DataFrame(mask, index=combined_table.index, columns=combined_table.columns)  
